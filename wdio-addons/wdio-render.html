@@ -1,0 +1,19 @@
+<ol>
+  {% for suite in suites %}
+  <li>
+    <strong>{{ suite.name }}</strong>
+    <ol>
+      {% for test in suite.tests %}
+      <li class="{{ test.state }}">
+        <strong>{{ test.name }}</strong>
+        {% if test.error %}
+        <div class="alert alert-danger">
+          {{ test.error }}
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </li>
+  {% endfor %}
+</ol>

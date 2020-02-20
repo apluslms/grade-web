@@ -17,6 +17,9 @@ RUN apt_install gnupg apt-transport-https \
 
 RUN mkdir /wdio && cd /wdio \
  && npm init -y \
- && npm install --save-dev @wdio/cli chai \
+ && npm install --save \
+  @wdio/cli \
+  wdio-json-reporter fs nunjucks \
+  chai \
  && node_modules/.bin/wdio config -y
-COPY wdio.conf.js /wdio/wdio.conf.js
+COPY wdio-addons /wdio/

@@ -1,0 +1,9 @@
+#!/bin/bash
+python3 -m http.server 8080 &
+server_pid=$!
+
+cd /wdio
+node_modules/.bin/wdio
+capture node wdio-render.js
+
+kill $server_pid
