@@ -1,0 +1,47 @@
+#!/bin/sh
+
+if [ "${DOCKER_TAG#*-}" = "${DOCKER_TAG}" ]; then
+    base=${DOCKER_TAG}
+    main=
+    full=$base
+else
+    main=${DOCKER_TAG%-*}
+    base=${DOCKER_TAG##*-}
+    full=$main-$base
+    if [ "${base#*u}" ]; then
+        base=${base%%u*}
+    fi
+fi
+
+if [ "$full" != "latest" ]; then
+    echo "############################################################"
+    echo "### pulling latest image, so layer cache is update."
+    docker pull $DOCKER_REPO:latest || true
+    echo "############################################################"
+fi
+
+: > tags.txt
+for layer in "" "wdio"; do
+    if [ "$layer" ]; then
+        tag="$layer-$full"
+        file="Dockerfile.$layer"
+    else
+        tag="$full"
+        file="Dockerfile"
+    fi
+    echo "############################################################"
+    echo "### building layer '$layer' with tag '$tag'"
+    echo "### MAIN_TAG=$main  BASE_TAG=$base FULL_TAG=$full RESULT_TAG=$tag"
+    echo "### creating '$DOCKER_REPO:$tag' with '$file'"
+    echo "############################################################"
+
+    docker build --build-arg "MAIN_TAG=$main" --build-arg "BASE_TAG=$base" \
+                 --build-arg "FULL_TAG=$full" --build-arg "RESULT_TAG=$tag" \
+                 -t $DOCKER_REPO:$tag -f "$file" .
+    res=$?
+    if [ $res -ne 0 ]; then
+        echo "Building layer $layer returned $res" >&2
+        exit $res
+    fi
+    echo "$tag" >> tags.txt
+done

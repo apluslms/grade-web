@@ -1,0 +1,22 @@
+ARG FULL_TAG=latest
+FROM apluslms/grade-web:$FULL_TAG
+
+ARG NODE_VERSION=12
+
+RUN apt_install gnupg apt-transport-https \
+ && curl -sSL https://dl.google.com/linux/linux_signing_key.pub | apt-key add - >/dev/null \
+ && echo "deb https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+ && apt_install google-chrome-stable
+
+RUN apt_install gnupg apt-transport-https \
+ && curl -sSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - >/dev/null \
+ && codename=$(cat /etc/os-release|grep '^VERSION='|cut '-d(' -f2|cut '-d)' -f1) \
+ && echo "deb https://deb.nodesource.com/node_$NODE_VERSION.x $codename main" > /etc/apt/sources.list.d/nodesource.list \
+ && echo "deb-src https://deb.nodesource.com/node_$NODE_VERSION.x $codename main" >> /etc/apt/sources.list.d/nodesource.list \
+ && apt_install nodejs
+
+RUN mkdir /wdio && cd /wdio \
+ && npm init -y \
+ && npm install --save-dev @wdio/cli chai \
+ && node_modules/.bin/wdio config -y
+COPY wdio.conf.js /wdio/wdio.conf.js
