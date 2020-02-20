@@ -1,13 +1,18 @@
 <ol>
   {% for suite in suites %}
   <li>
-    <strong>{{ suite.name }}</strong>
+    {{ suite.name }}
     <ol>
       {% for test in suite.tests %}
       <li class="{{ test.state }}">
-        <strong>{{ test.name }}</strong>
         {% if test.error %}
-        <div class="alert alert-danger">
+        <span class="text-danger">⨯</span>
+        {% else %}
+        <span class="text-success">✔</span>
+        {% endif %}
+        {{ test.name }}
+        {% if test.error %}
+        <div class="alert alert-danger mb-0">
           {{ test.error }}
         </div>
         {% endif %}
