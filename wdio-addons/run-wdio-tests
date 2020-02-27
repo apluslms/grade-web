@@ -4,6 +4,6 @@ server_pid=$!
 
 cd /wdio
 node_modules/.bin/wdio $@
-capture node wdio-render.js
+capture node wdio-render.js wdio-0-0-json-reporter.log
 
 kill $server_pid

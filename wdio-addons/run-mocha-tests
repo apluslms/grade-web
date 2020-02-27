@@ -2,8 +2,8 @@
 TESTS="$@"
 if [ -z "$TESTS" ]
 then
-  TESTS=/submission/test*.js
+  TESTS=/submission/user/test*.js
 fi
 cd /wdio
-node_modules/.bin/mocha -R mocha-spec-json-output-reporter --reporter-options fileName=wdio-0-0-json-reporter.log $TESTS
-capture node wdio-render.js
+node_modules/.bin/mocha -R mocha-spec-json-output-reporter --reporter-options fileName=report.json $TESTS >/dev/null 2>&1
+capture node wdio-render.js report.json
