@@ -35,4 +35,6 @@ this container provides following utilities.
 
   Simple sanity checks can be run from command line and `sys.exit == 0` communicates success.
 
+  * `html_parse file_name`
+  * `css_parse file_name`
   * `js_parse file_name [function function_name]`
