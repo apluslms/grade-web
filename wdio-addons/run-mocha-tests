@@ -5,5 +5,5 @@ then
   TESTS=/submission/user/test*.js
 fi
 cd /wdio
-node_modules/.bin/mocha -R mocha-spec-json-output-reporter --reporter-options fileName=report.json $TESTS >/dev/null 2>&1
-capture node wdio-render.js report.json
+node_modules/.bin/mocha -R mocha-spec-json-output-reporter --reporter-options fileName=mocha.json $TESTS > mocha.log 2>&1
+capture node wdio-render.js mocha.json
