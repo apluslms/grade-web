@@ -5,13 +5,13 @@
     <ol>
       {% for test in suite.tests %}
       <li class="{{ test.state }}">
-        {% if test.error or test.err %}
+        {% if test.error or test.result == "failed" %}
         <span class="text-danger">⨯</span>
         {% else %}
         <span class="text-success">✔</span>
         {% endif %}
         {{ test.name }}{{ test.title }}
-        {% if test.error or test.err %}
+        {% if test.error or test.result == "failed" %}
         <div class="alert alert-danger mb-0">
           {{ test.error }}{{ test.err.message }}
         </div>
