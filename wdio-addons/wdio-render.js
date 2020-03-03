@@ -12,6 +12,16 @@ nj.configure(__dirname, { autoescape: true });
 console.log(nj.render('wdio-render.html', res));
 
 const counter = (sum, test) => sum + 1;
-const maxPoints = res.suites.reduce((s, suite) => s + suite.tests.reduce(counter, 0), 0);
-const points = res.suites.reduce((s, suite) => s + suite.tests.filter((test) => test.error === undefined).reduce(counter, 0), 0);
+const isOk = (test) => (
+  test.error === undefined
+  && (test.result === undefined || test.result == 'success')
+);
+const maxPoints = res.suites.reduce(
+  (s, suite) => s + suite.tests.reduce(counter, 0),
+  0
+);
+const points = res.suites.reduce(
+  (s, suite) => s + suite.tests.filter(isOk).reduce(counter, 0),
+  0
+);
 console.log(`\nTotalPoints: ${points}\nMaxPoints: ${maxPoints}\n`);
