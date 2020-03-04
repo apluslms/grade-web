@@ -4,29 +4,35 @@ from xml.dom.minidom import (Document, Element)
 import tinycss
 import pyjsparser
 
-def html_parse(text):
+def html_parse(text, description_of_parse_location):
     parser = html5lib.HTMLParser(tree=html5lib.getTreeBuilder("dom"), strict=True)
     try:
         document = parser.parse(text)
         return (
             True, document,
-            'The file contained proper HTML5 document, '
-            'e.g. all elements were recognized, correctly closed and having valid parent elements.'
+            'The {} contained proper HTML5 document, '
+            'e.g. all elements were recognized, correctly closed and having valid parent elements.'.format(
+                description_of_parse_location
+            )
         )
     except:
         return (
             False, None,
-            'The file did not contain a proper HTML5 document. '
+            'The {} did not contain a proper HTML5 document. '
             'The possible reasons include unrecognized elements (tags), '
             'failures to close an element with the corresponding ending &lt;/tag&gt; '
             'and elements that are located inside invalid parent element. '
-            'Below the raw output from the validator program is presented:<ul>{}</ul>'.format(
-                '<li>Line: {:d} Character: {:d} Error: {}</li>'.format(
-                    e[0][0],
-                    e[0][1],
-                    html5lib.constants.E[e[1]] % e[2]
-                ) for e in parser.errors
-            ))
+            'Below the raw output from the validator program is presented:\n<ul>{}</ul>'.format(
+                description_of_parse_location,
+                '\n'.join(
+                    '<li>Line: {:d} Character: {:d} Error: {}</li>'.format(
+                        e[0][0],
+                        e[0][1],
+                        html5lib.constants.E[e[1]] % e[2]
+                    ) for e in parser.errors
+                )
+            )
+        )
 
 def html_node_text(node):
     for child in node.childNodes:
@@ -135,15 +141,17 @@ def css_parse(text_or_node, description_of_parse_location):
         return (
             False, None,
             'The {} did not contain valid CSS stylesheet syntax. '
-            'The possible reasons include failures to enclose ruleset declarions in curly brackets <code>{}</code>, '
+            'The possible reasons include failures to enclose ruleset declarions in curly brackets <code>{{}}</code>, '
             'rules that do not separate name and value by <code>:</code>-character or do not end with <code>;</code>-character. '
-            'Below the raw output from the validator program is presented:<ul>{}</ul>'.format(
+            'Below the raw output from the validator program is presented:\n<ul>{}</ul>'.format(
                 description_of_parse_location,
-                ('<li>Line: {:d} Character: {:d} Error: {}</li>'.format(
-                    e.line,
-                    e.column,
-                    e.reason
-                ) for e in css.errors)
+                '\n'.join(
+                    '<li>Line: {:d} Character: {:d} Error: {}</li>'.format(
+                        e.line,
+                        e.column,
+                        e.reason
+                    ) for e in css.errors
+                )
             )
         )
 
@@ -172,7 +180,7 @@ def js_parse(text_or_node, description_of_parse_location):
             'Encountered syntax error while parsing the JavaScript-code in {}. '
             'Note, that programming languages are picky and you need to write the commands precisely. '
             'You should test your solution in browser and check that no errors appear in console panel. '
-            'Below the raw output from the parser program is presented:<ul><li>{}</li></ul>'.format(
+            'Below the raw output from the parser program is presented:\n<ul><li>{}</li></ul>'.format(
                 description_of_parse_location,
                 str(e)
             )
@@ -198,7 +206,8 @@ def li_msg(success, message):
     print((OK_LI if success else ERROR_LI).format(message))
 
 def read_file(file_name):
-    with open(file_name, 'r') as fp:
+    import os
+    with open(os.path.join(os.getcwd(), file_name), 'r') as fp:
         return fp.read()
 
 def main(cmd, *arg):

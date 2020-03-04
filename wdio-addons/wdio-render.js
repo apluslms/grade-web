@@ -14,7 +14,7 @@ console.log(nj.render('wdio-render.html', res));
 const counter = (sum, test) => sum + 1;
 const isOk = (test) => (
   test.error === undefined
-  && (test.result === undefined || test.result == 'success')
+  && (test.result === undefined || test.result != 'failed')
 );
 const maxPoints = res.suites.reduce(
   (s, suite) => s + suite.tests.reduce(counter, 0),
