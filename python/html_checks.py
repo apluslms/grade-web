@@ -1,8 +1,9 @@
 #!/bin/#!/usr/bin/env python3
 import html5lib
 from xml.dom.minidom import (Document, Element)
+from html import escape
 import tinycss
-import pyjsparser
+import esprima
 
 def html_parse(text, description_of_parse_location):
     parser = html5lib.HTMLParser(tree=html5lib.getTreeBuilder("dom"), strict=True)
@@ -35,10 +36,7 @@ def html_parse(text, description_of_parse_location):
         )
 
 def html_node_text(node):
-    for child in node.childNodes:
-        if child.nodeType == 3:
-            return child.nodeValue
-    return ''
+    return ''.join(c.nodeValue for c in node.childNodes if c.nodeType == 3)
 
 def html_cast_text(any):
     if type(any) == Element:
@@ -69,11 +67,11 @@ def html_find_recursively(node, name, attrs = None):
         match.extend(html_find_recursively(child, name, attrs))
     return match
 
-def html_node_text(node, attrs = None):
+def html_print_string(node, attrs = None):
     if type(node) == Document:
         return 'document root'
     if type(node) == Element:
-        return node_text(
+        return html_print_string(
             node.localName,
             { k: v.value for k,v in dict(node.attributes).items() }
         )
@@ -86,21 +84,21 @@ def html_require_child(node, name, attrs = None, recursion = False):
         if recursion else
         html_find_children(node, name, attrs)
     )
-    tag_text = html_node_text(name, attrs)
-    parent_text = html_node_text(node)
+    tag_str = html_print_string(name, attrs)
+    parent_str = html_print_string(node)
     if len(match) > 1:
         return (
             False, None,
-            'More than one {} found inside {}.'.format(tag_text, parent_text)
+            'More than one {} found inside {}.'.format(tag_str, parent_str)
         )
     elif len(match) == 1:
         return (
-            True, match[0],
-            'Found {} inside {}.'.format(tag_text, parent_text)
+            True, match[0][1],
+            'Found {} inside {}.'.format(tag_str, parent_str)
         )
     return (
         False, None,
-        'No {} found inside {}.'.format(tag_text, parent_text)
+        'No {} found inside {}.'.format(tag_str, parent_str)
     )
 
 def html_require_path(node, path):
@@ -114,16 +112,34 @@ def html_require_path(node, path):
     return True, element, result
 
 def html_require_text(node, text):
-    parent_text = html_node_text(node)
+    parent_str = html_print_string(node)
     if html_has_text(node, text):
         return (
             True, node,
-            'Element {} has text {}.'.format(parent_text, text)
+            'Element {} has text {}.'.format(parent_str, text)
         )
     return (
         False, None,
-        'Element {} has not text {}.'.format(parent_text, text)
+        'Element {} has not text {}.'.format(parent_str, text)
     )
+
+def html_require_attributes(node, attrs, node_name=None):
+    parent_str = node_name or html_print_string(node)
+    result = True
+    msgs = []
+    for k,v in (attrs or {}).items():
+        if node.hasAttribute(k):
+            if v is None:
+                msgs.append((True, 'Element {} has attribute {}.').format(parent_str, k))
+            elif node.getAttribute(k) == v:
+                msgs.append((True, 'Element {} has attribute {}="{}".'.format(parent_str, k, v)))
+            else:
+                msgs.append((False, 'Element {} does not have attribute {}="{}" but {}="{}" instead.'.format(parent_str, k, v, k, escape(node.getAttribute(k)))))
+                result = False
+        else:
+            msgs.append((False, 'Element {} does not have attribute {}.'.format(parent_str, k)))
+            result = False
+    return result, msgs
 
 def css_parse(text_or_node, description_of_parse_location):
     parser = tinycss.make_parser('page3')
@@ -132,7 +148,7 @@ def css_parse(text_or_node, description_of_parse_location):
         return (
             True, css,
             'The {} contains valid CSS stylesheet syntax, '
-            'e.g. all ruleset declarations are enclosed in curly brackets <code>{}</code>, '
+            'e.g. all ruleset declarations are enclosed in curly brackets <code>{{}}</code>, '
             'all rules have property name and value separated by <code>:</code>-character and end with <code>;</code>-character.'.format(
                 description_of_parse_location
             )
@@ -155,16 +171,15 @@ def css_parse(text_or_node, description_of_parse_location):
             )
         )
 
-def js_parse(text_or_node, description_of_parse_location):
+def js_parse(text_or_node, description_of_parse_location, module=False):
     try:
-        js = pyjsparser.parse(html_cast_text(text_or_node))
-        if js['type'] != 'Program':
-            return (
-                False, None,
-                'Unexpectedly JavaScript in {} could not be parsed as a "Program"-entity. '
-                'Report to course staff for guidance.'.format(description_of_parse_location)
-            )
-        body = [s for s in js['body'] if s['type'] != 'EmptyStatement']
+        js = (
+            esprima.parseScript(html_cast_text(text_or_node))
+            if not module else
+            esprima.parseModule(html_cast_text(text_or_node))
+        )
+        assert js.type == 'Program'
+        body = [s for s in js.body if s.type != 'EmptyStatement']
         if len(body) == 0:
             return (
                 False, None,
@@ -174,7 +189,7 @@ def js_parse(text_or_node, description_of_parse_location):
             True, body,
             'Validated JavaScript-code in {}.'.format(description_of_parse_location)
         )
-    except pyjsparser.pyjsparserdata.JsSyntaxError as e:
+    except esprima.error_handler.Error as e:
         return (
             False, None,
             'Encountered syntax error while parsing the JavaScript-code in {}. '
@@ -188,7 +203,7 @@ def js_parse(text_or_node, description_of_parse_location):
 
 def js_has_function(js, function_name):
     for s in js:
-        if s['type'] == 'FunctionDeclaration' and s['id']['type'] == 'Identifier' and s['id']['name'] == function_name:
+        if s.type == 'FunctionDeclaration' and s.id.type == 'Identifier' and s.id.name == function_name:
             return (
                 True, s,
                 'Found the declaration of function "{}".'.format(function_name)
