@@ -37,4 +37,4 @@ this container provides following utilities.
 
   * `html_parse file_name`
   * `css_parse file_name`
-  * `js_parse file_name [function function_name]`
+  * `js_parse file_name [function|variable name]`
