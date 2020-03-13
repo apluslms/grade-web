@@ -107,7 +107,7 @@ class Reporter:
 class HtmlListReporter(Reporter):
 
     FORMAT = {
-        'level': '<li class="check-level">{message}{points}\n{body}</li>',
+        'level': '<li class="check-level"><strong>{message}</strong>{points}\n{body}</li>',
         'success': '<li class="check-success"><span class="text-success">✔</span> {message}{points}</li>',
         'fail': '<li class="check-fail"><span class="text-danger">⨯</span> {message}{points}</li>',
         'row': '<li class="check-message">{message}{points}</li>',
