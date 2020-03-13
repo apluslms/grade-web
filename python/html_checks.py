@@ -8,42 +8,47 @@ import esprima
 
 class Logger:
 
-    def __init__(self, reporter, level=0):
+    def __init__(self, reporter, level=0, points=0):
         self.reporter = reporter
         self.level = level
+        self.level_max = points > 0
+        self.level_ok = True
         self.rows = []
         self.points = 0
-        self.max_points = 0
+        self.max_points = points
 
-    def add_level(self, msg):
-        sublog = Logger(self.reporter, self.level + 1)
-        self.rows.append(('level', msg, sublog))
+    def add_level(self, msg, points=0):
+        sublog = Logger(self.reporter, self.level + 1, points)
+        self.rows.append(('level', msg, points, sublog))
         return sublog
 
     def message(self, msg):
-        self.rows.append(('message', msg))
+        self.rows.append(('message', msg, 0))
 
     def success(self, msg, points=0):
-        self.rows.append(('success', msg))
+        self.rows.append(('success', msg, points))
         self.add_points(points, True)
 
     def fail(self, msg, points=0):
-        self.rows.append(('fail', msg))
+        self.rows.append(('fail', msg, points))
         self.add_points(points, False)
+        self.level_ok = False
 
     def __str__(self):
         return self.reporter.format(self)
 
     def add_points(self, points, earned):
         self.points += points if earned else 0
-        self.max_points += points
+        self.max_points += 0 if self.level_max else points
 
     def points_total(self):
-        points = self.points
+        points = min(self.points, self.max_points)
+        if self.level_max and self.level_ok and self.points == 0:
+            points = self.max_points
         max_points = self.max_points
         for row in self.rows:
             if row[0] == 'level':
-                p, m = row[2].points_total()
+                p, m = row[3].points_total()
                 points += p
                 max_points += m
         return (points, max_points)
@@ -52,10 +57,11 @@ class Logger:
 class Reporter:
 
     FORMAT = {
-        'level': '{index:d}. {message}\n{body}',
-        'success': '* Success! {message}',
-        'fail': '* Fail! {message}',
-        'row': '* {message}',
+        'level': '{index:d}. {message}{points}:\n{body}',
+        'success': '* Success! {message}{points}',
+        'fail': '* Fail! {message}{points}',
+        'row': '* {message}{points}',
+        'points_wrap': ' ({:d})',
         'separator': '\n',
     }
 
@@ -66,26 +72,23 @@ class Reporter:
         res = []
         for index, row in enumerate(logger.rows):
             res.append(self.format_row(
-                logger.level,
-                index,
-                row[0],
-                row[1],
-                None if len(row) < 3 else str(row[2])
+                logger.level, index + 1, row[0], row[1], row[2],
+                None if len(row) < 4 else str(row[3])
             ))
         return (
             self.wrap_level(logger.level, self.FORMAT['separator'].join(res))
             + '\n' + self.points_lines(logger)
         )
 
-    def format_row(self, level, index, type, message, body):
+    def format_row(self, level, index, type, message, points, body):
         key = type if type in self.FORMAT else 'row'
         return self.wrap_row(level, index, self.FORMAT[key].format(
-            level=level,
-            index=index,
-            type=type,
-            message=message,
-            body=body
+            level=level, index=index, type=type,
+            message=message, points=self.wrap_points(points), body=body
         ))
+
+    def wrap_points(self, points):
+        return self.FORMAT['points_wrap'].format(points) if points > 0 else ''
 
     def wrap_row(self, level, index, row):
         return row
@@ -104,12 +107,13 @@ class Reporter:
 class HtmlListReporter(Reporter):
 
     FORMAT = {
-        'level': '<li class="check-level">{message}\n{body}\n</li>',
-        'success': '<li class="check-success"><span class="text-success">✔</span> {message}</li>',
-        'fail': '<li class="check-fail"><span class="text-danger">⨯</span> {message}</li>',
-        'row': '<li class="check-message">{message}</li>',
+        'level': '<li class="check-level">{message}{points}\n{body}</li>',
+        'success': '<li class="check-success"><span class="text-success">✔</span> {message}{points}</li>',
+        'fail': '<li class="check-fail"><span class="text-danger">⨯</span> {message}{points}</li>',
+        'row': '<li class="check-message">{message}{points}</li>',
         'level_wrap_numbered': '<ol>\n{}\n</ol>',
         'level_wrap': '<ul>\n{}\n</ul>',
+        'points_wrap': ' ({:d})',
         'separator': '\n',
     }
 
@@ -442,9 +446,9 @@ def main(cmd, *arg):
     item = None
     if cmd == 'html_parse' and len(arg) > 0:
         item = html_validate(logger, 0, arg[0], read_file(arg[0]))
-    if cmd == 'css_parse' and len(arg) > 0:
+    elif cmd == 'css_parse' and len(arg) > 0:
         item = css_validate(logger, 0, arg[0], read_file(arg[0]))
-    if cmd == 'js_parse' and len(arg) > 0:
+    elif cmd == 'js_parse' and len(arg) > 0:
         item = js_validate(logger, 0, arg[0], read_file(arg[0]))
         if item and len(arg) > 2:
             if arg[1] == 'function':
@@ -453,6 +457,8 @@ def main(cmd, *arg):
             elif arg[1] == 'variable':
                 if len(js_require_variable(logger, 0, item, arg[2])) == 0:
                     item = None
+    else:
+        logger.fail('Unknown command: {}'.format(cmd))
     print(logger)
     return not item is None
 
