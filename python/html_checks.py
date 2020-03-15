@@ -151,7 +151,10 @@ def html_has_text(node, text):
 
 def html_has_attributes(node, attrs):
     for k,v in (attrs or {}).items():
-        if not node.hasAttribute(k) or node.getAttribute(k) != v:
+        if node.hasAttribute(k):
+            if v is False or (not v is True and node.getAttribute(k) != v):
+                return False
+        elif not v is False:
             return False
     return True
 
