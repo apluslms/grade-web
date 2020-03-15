@@ -113,7 +113,7 @@ class HtmlListReporter(Reporter):
         'row': '<li class="check-message">{message}{points}</li>',
         'level_wrap_numbered': '<ol>\n{}\n</ol>',
         'level_wrap': '<ul>\n{}\n</ul>',
-        'points_wrap': ' ({:d})',
+        'points_wrap': ' ({:d})p',
         'separator': '\n',
     }
 
