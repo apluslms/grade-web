@@ -358,7 +358,7 @@ def js_parse(text_or_node, module=False):
         assert js.type == 'Program'
         return (js, tuple())
     except esprima.error_handler.Error as e:
-        return (None, tuple(str(e)))
+        return (None, [str(e)])
 
 def js_validate(logger, points, description_of_parse_location, text_or_node, module=False):
     js, errors = js_parse(text_or_node, module)
