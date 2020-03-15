@@ -172,7 +172,9 @@ def html_print_string(node, attrs=None):
             node.localName,
             { k: v.value for k,v in dict(node.attributes).items() }
         )
-    parts = [node] + ['{}="{}"'.format(k, v) for k,v in (attrs or {}).items()]
+    parts = [node]
+    parts += ['{}="{}"'.format(k, v) for k,v in (attrs or {}).items() if not v is False and not v is True]
+    parts += ['{}'.format(k) for k,v in (attrs or {}).items() if v is True]
     return '&lt;' + ' '.join(parts) + '&gt;'
 
 def html_validate(logger, points, description_of_parse_location, text):
