@@ -11,17 +11,54 @@ const res = JSON.parse(fs.readFileSync(__dirname + '/' + process.argv[2], 'utf8'
 nj.configure(__dirname, { autoescape: true });
 console.log(nj.render('wdio-render.html', res));
 
-const counter = (sum, test) => sum + 1;
-const isOk = (test) => (
+const passes = (test) => (
   test.error === undefined
   && (test.result === undefined || test.result != 'failed')
 );
-const maxPoints = res.suites.reduce(
-  (s, suite) => s + suite.tests.reduce(counter, 0),
-  0
-);
-const points = res.suites.reduce(
-  (s, suite) => s + suite.tests.filter(isOk).reduce(counter, 0),
-  0
-);
+
+const pointsRegex = /.*\((\d+)p?\)$/i;
+const getPoints = (item) => {
+  let result = pointsRegex.exec(item.name || item.title);
+  return result ? parseInt(result[1]) : undefined;
+}
+
+let points = 0;
+let maxPoints = 0;
+
+res.suites.forEach((suite) => {
+  let suitePoints = getPoints(suite);
+  let suitePassed = true;
+  let testCount = 0;
+  let testPassedCount = 0;
+  let testPoints = 0;
+  let testMaxPoints = 0;
+
+  suite.tests.forEach((test) => {
+    let p = getPoints(test) || 0;
+    testCount += 1;
+    testMaxPoints += p;
+    if (passes(test)) {
+      testPassedCount += 1;
+      testPoints += p;
+    } else {
+      suitePassed = false;
+    }
+  });
+
+  if (suitePoints > 0) {
+    maxPoints += suitePoints;
+    if (testMaxPoints > 0) {
+      points += Math.min(testPoints, suitePoints);
+    } else {
+      points += suitePassed ? suitePoints : 0;
+    }
+  } else if (testMaxPoints > 0) {
+    maxPoints += testMaxPoints;
+    points += testPoints;
+  } else {
+    maxPoints += testCount;
+    points += testPassedCount;
+  }
+});
+
 console.log(`\nTotalPoints: ${points}\nMaxPoints: ${maxPoints}\n`);

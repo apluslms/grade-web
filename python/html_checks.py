@@ -61,7 +61,7 @@ class Reporter:
         'success': '* Success! {message}{points}',
         'fail': '* Fail! {message}{points}',
         'row': '* {message}{points}',
-        'points_wrap': ' ({:d})',
+        'points_wrap': ' ({:d}p)',
         'separator': '\n',
     }
 
