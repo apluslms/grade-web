@@ -6,4 +6,4 @@ then
 fi
 cd /wdio
 node_modules/.bin/mocha -R mocha-spec-json-output-reporter --reporter-options fileName=mocha.json $TESTS > mocha.log 2>&1
-capture node wdio-render.js mocha.json
+capture node wdio-render.js mocha.json mocha.log
