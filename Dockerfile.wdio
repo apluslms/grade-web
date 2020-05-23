@@ -21,6 +21,6 @@ RUN mkdir /wdio && cd /wdio \
   @wdio/cli \
   wdio-json-reporter fs nunjucks \
   chai mocha-spec-json-output-reporter \
-  request node-static cookie express \
+  request node-static cookie express pug \
  && node_modules/.bin/wdio config -y
 COPY wdio-addons /wdio/
