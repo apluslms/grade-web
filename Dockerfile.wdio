@@ -23,8 +23,9 @@ RUN mkdir /wdio && cd /wdio \
  && npm init -y \
  && npm install --save \
   @wdio/cli \
-  wdio-json-reporter fs nunjucks \
+  wdio-json-reporter nunjucks \
   chai mocha-spec-json-output-reporter \
-  request node-static cookie express pug \
+  node-static cookie express pug \
+  urllib \
  && node_modules/.bin/wdio config -y
 COPY wdio-addons /wdio/
