@@ -14,6 +14,7 @@ RUN apt_install \
     tinycss \
     esprima \
     pyquery \
+    requests \
  && find /usr/local/lib/python* -type d -regex '.*/locale/[a-z_A-Z]+' -not -regex '.*/\(en\|fi\|sv\)' -print0 | xargs -0 rm -rf \
  && find /usr/local/lib/python* -type d -name 'tests' -print0 | xargs -0 rm -rf
 
